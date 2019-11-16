@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+echo "Configure ssh"
+eval "$(ssh-agent -s)"
+ssh-add .ssh/id_rsa
+
+echo "Download dotfiles to /mnt/home/alexj"
+nix-env -i git
+git clone --recurse-submodules git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
+cp secrets.nix /mnt/home/alexj/.config/nixos/data/.
+
+echo "Add ssh key to alexj's home"
+cp -R .ssh /mnt/home/alexj/
+
+echo "Select nixos-unstable channel"
+nix-channel --add https://nixos.org/channels/nixos-unstable nixos
+
+echo "Prepare nixos configuration from dotfiles"
+mkdir -p /mnt/etc/nixos
+ln -s /mnt/home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix

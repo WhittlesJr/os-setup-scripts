@@ -35,18 +35,31 @@ zpool create -f              \
   -O acltype=posixacl        \
   -O compression=lz4         \
   -O mountpoint=none         \
-  -O encryption=aes-256-gcm  \
-  -O keyformat=passphrase    \
   rpool mirror ${ROOT_DISK_1}-part4 ${ROOT_DISK_2}-part4
 
-zfs create -o com.sun:auto-snapshot=false -o canmount=off -o mountpoint=none       rpool/ROOT
-zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=/          rpool/ROOT/nixos             
-zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=/etc       rpool/ROOT/nixos/etc         
-zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=/var       rpool/ROOT/nixos/var         
-zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=/var/cache rpool/ROOT/nixos/var/cache   
-zfs create -o com.sun:auto-snapshot=false -o setuid=off   -o mountpoint=/var/tmp   rpool/ROOT/nixos/var/tmp     
+zfs create -o com.sun:auto-snapshot=false                                      \  
+           -o canmount=off                                                     \
+           -o encryption=aes-256-gcm                                           \
+           -o keyformat=passphrase                                             \ 
+           -o keylocation=prompt                          -o mountpoint=none   rpool/ROOT
+zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=legacy rpool/ROOT/nixos
+zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=legacy rpool/ROOT/nixos/etc         
+zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=legacy rpool/ROOT/nixos/var         
+zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=legacy rpool/ROOT/nixos/var/cache   
+zfs create -o com.sun:auto-snapshot=false -o setuid=off   -o mountpoint=legacy rpool/ROOT/nixos/var/tmp     
 
-zpool set bootfs=rpool/ROOT/nixos rpool
+mkdir /mnt
+mount -t zfs rpool/ROOT/nixos            /mnt
+
+mkdir /mnt/etc
+mkdir /mnt/var
+mount -t zfs rpool/ROOT/nixos/etc       /mnt/etc
+mount -t zfs rpool/ROOT/nixos/var       /mnt/var
+
+mkdir /mnt/var/cache
+mkdir /mnt/var/tmp
+mount -t zfs rpool/ROOT/nixos/var/cache /mnt/var/cache
+mount -t zfs rpool/ROOT/nixos/var/tmp   /mnt/var/tmp
 
 ####
 # bpool
@@ -77,17 +90,15 @@ zpool create -o ashift=12 -d \
     bpool mirror ${ROOT_DISK_1}-part3 ${ROOT_DISK_2}-part3
 
 zfs create -o mountpoint=none   bpool/BOOT
-zfs create -o mountpoint=/boot  bpool/BOOT/nixos
+zfs create -o mountpoint=legacy bpool/BOOT/nixos
+
+mkdir /mnt/boot
+mount -t zfs bpool/BOOT/nixos /mnt/boot
 
 ####
 # tank
 ########################
 echo "Creating tank"
-
-mkdir /mnt/root
-
-cp tank-key /root/tank-key
-cp tank-key /mnt/root/tank-key
 
 zpool create -f       \
   -o ashift=12        \
@@ -97,41 +108,22 @@ zpool create -f       \
   -O compression=lz4  \
   tank mirror $TANK_DISK_1 $TANK_DISK_2 \
        mirror $TANK_DISK_3 $TANK_DISK_4
-              
 
-zfs create -o com.sun:auto-snapshot=false       -o mountpoint=/media tank/media
-zfs create -o com.sun:auto-snapshot=true                             \
-	   -o atime=off                                              \
-           -o relatime=on                                            \
-           -o encryption=aes-256-gcm                                 \
-           -o keyformat=hex                                          \
-           -o keylocation=file:///root/tank-key -o mountpoint=/home tank/home
+zfs create -o com.sun:auto-snapshot=false -o mountpoint=legacy tank/media
+zfs create -o com.sun:auto-snapshot=true                       \
+	   -o atime=off                                        \
+           -o relatime=on                                      \
+           -o encryption=aes-256-gcm                           \
+           -o keyformat=passphrase                             \ 
+           -o keylocation=prompt          -o mountpoint=legacy tank/home
+
+mkdir /mnt/media
+mkdir /mnt/home
+mount -t zfs tank/media /mnt/media
+mount -t zfs tank/home  /mnt/home
 
 ####
 # Print results
 ########################
 zfs list -t all -o name,type,mountpoint,compress,exec,setuid,atime,relatime
 
-
-####
-# Setup alexj home directory
-########################
-
-echo "Configure ssh"
-eval "$(ssh-agent -s)"
-ssh-add .ssh/id_rsa
-
-echo "Download dotfiles to /mnt/home/alexj"
-nix-env -i git
-git clone --recurse-submodules git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
-cp secrets.nix /mnt/home/alexj/.config/nixos/data/.
-
-echo "Add ssh key to alexj's home"
-cp -R .ssh /mnt/home/alexj/
-
-echo "Select nixos-unstable channel"
-nix-channel --add https://nixos.org/channels/nixos-unstable nixos
-
-echo "Prepare nixos configuration from dotfiles"
-mkdir -p /mnt/etc/nixos
-ln -s /mnt/home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix
