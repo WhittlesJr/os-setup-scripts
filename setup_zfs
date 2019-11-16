@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+source disks
+
+####
+# disks
+########################
+echo "Partitioning disks"
+sgdisk -a1 -n1:24K:+1000K -t1:EF02 $ROOT_DISK_1
+sgdisk     -n2:1M:+512M   -t2:EF00 $ROOT_DISK_1
+sgdisk     -n3:0:+1G      -t3:BF01 $ROOT_DISK_1
+sgdisk     -n4:0:0        -t4:8300 $ROOT_DISK_1
+
+sgdisk -a1 -n1:24K:+1000K -t1:EF02 $ROOT_DISK_2
+sgdisk     -n2:1M:+512M   -t2:EF00 $ROOT_DISK_2
+sgdisk     -n3:0:+1G      -t3:BF01 $ROOT_DISK_2
+sgdisk     -n4:0:0        -t4:8300 $ROOT_DISK_2
+
+sleep 2
+
+# Not using UEFi at the moment, but could be used in the future
+mkdosfs -F 32 -s 1 -n EFI ${ROOT_DISK_1}-part2
+mkdosfs -F 32 -s 1 -n EFI ${ROOT_DISK_2}-part2
+
+####
+# rpool
+########################
+echo "Creating encrypted rpool."
+
+zpool create -f              \
+  -o altroot=/mnt            \
+  -o ashift=12               \
+  -O normalization=formD     \
+  -O atime=off               \
+  -O acltype=posixacl        \
+  -O compression=lz4         \
+  -O mountpoint=none         \
+  -O encryption=aes-256-gcm  \
+  -O keyformat=passphrase    \
+  rpool mirror ${ROOT_DISK_1}-part4 ${ROOT_DISK_2}-part4
+
+zfs create -o com.sun:auto-snapshot=false -o canmount=off -o mountpoint=none       rpool/ROOT
+zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=/          rpool/ROOT/nixos             
+zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=/etc       rpool/ROOT/nixos/etc         
+zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=/var       rpool/ROOT/nixos/var         
+zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=/var/cache rpool/ROOT/nixos/var/cache   
+zfs create -o com.sun:auto-snapshot=false -o setuid=off   -o mountpoint=/var/tmp   rpool/ROOT/nixos/var/tmp     
+
+zpool set bootfs=rpool/ROOT/nixos rpool
+
+####
+# bpool
+########################
+echo "Creating bpool"
+
+zpool create -o ashift=12 -d \
+    -o feature@async_destroy=enabled \
+    -o feature@bookmarks=enabled \
+    -o feature@embedded_data=enabled \
+    -o feature@empty_bpobj=enabled \
+    -o feature@enabled_txg=enabled \
+    -o feature@extensible_dataset=enabled \
+    -o feature@filesystem_limits=enabled \
+    -o feature@hole_birth=enabled \
+    -o feature@large_blocks=enabled \
+    -o feature@lz4_compress=enabled \
+    -o feature@spacemap_histogram=enabled \
+    -o feature@userobj_accounting=enabled \
+    -O acltype=posixacl \
+    -O compression=lz4 \
+    -O devices=off \
+    -O normalization=formD \
+    -O relatime=on \
+    -O xattr=sa \
+    -O mountpoint=none \
+    -o altroot=/mnt \
+    bpool mirror ${ROOT_DISK_1}-part3 ${ROOT_DISK_2}-part3
+
+zfs create -o mountpoint=none   bpool/BOOT
+zfs create -o mountpoint=/boot  bpool/BOOT/nixos
+
+####
+# tank
+########################
+echo "Creating tank"
+
+mkdir /mnt/root
+
+cp tank-key /root/tank-key
+cp tank-key /mnt/root/tank-key
+
+zpool create -f       \
+  -o ashift=12        \
+  -o altroot=/mnt     \
+  -O atime=on         \
+  -O mountpoint=none  \
+  -O compression=lz4  \
+  tank mirror $TANK_DISK_1 $TANK_DISK_2 \
+       mirror $TANK_DISK_3 $TANK_DISK_4
+              
+
+zfs create -o com.sun:auto-snapshot=false       -o mountpoint=/media tank/media
+zfs create -o com.sun:auto-snapshot=true                             \
+	   -o atime=off                                              \
+           -o relatime=on                                            \
+           -o encryption=aes-256-gcm                                 \
+           -o keyformat=hex                                          \
+           -o keylocation=file:///root/tank-key -o mountpoint=/home tank/home
+
+####
+# Print results
+########################
+zfs list -t all -o name,type,mountpoint,compress,exec,setuid,atime,relatime
+
+
+####
+# Setup alexj home directory
+########################
+
+echo "Configure ssh"
+eval "$(ssh-agent -s)"
+ssh-add .ssh/id_rsa
+
+echo "Download dotfiles to /mnt/home/alexj"
+nix-env -i git
+git clone --recurse-submodules git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
+cp secrets.nix /mnt/home/alexj/.config/nixos/data/.
+
+echo "Add ssh key to alexj's home"
+cp -R .ssh /mnt/home/alexj/
+
+echo "Select nixos-unstable channel"
+nix-channel --add https://nixos.org/channels/nixos-unstable nixos
+
+echo "Prepare nixos configuration from dotfiles"
+mkdir -p /mnt/etc/nixos
+ln -s /mnt/home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix

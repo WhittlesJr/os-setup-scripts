@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+zpool export tank
+zpool export bpool
+zpool export rpool

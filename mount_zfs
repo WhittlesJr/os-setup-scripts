@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+zpool import
+cp tank-key /root/.
+
+# Managed by ZFS
+#zpool import -R /mnt rpool
+#zfs load-key rpool
+#zfs mount -a
+#zpool import -R /mnt bpool
+#zpool import -R /mnt tank
+#zfs load-key tank/home
+#zfs mount -a
+
+# Managed by NixOS
+zpool import -f rpool
+zpool import -f bpool
+zpool import -f tank
+
+zfs load-key rpool
+zfs load-key tank/home
+
+mount -t zfs rpool/ROOT/nixos            /mnt           
+mount -t zfs rpool/ROOT/nixos/etc        /mnt/etc       
+mount -t zfs rpool/ROOT/nixos/var        /mnt/var       
+mount -t zfs rpool/ROOT/nixos/var/tmp    /mnt/var/tmp   
+mount -t zfs rpool/ROOT/nixos/var/cache  /mnt/var/cache 
+mount -t zfs bpool/BOOT/nixos            /mnt/boot      
+mount -t zfs tank/home                   /mnt/home      
+mount -t zfs tank/media                  /mnt/media     
+

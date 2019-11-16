@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source disks
+
+umount -R /mnt
+
+zpool destroy tank
+zpool destroy rpool
+zpool destroy bpool
+
+rm -rf /mnt
+
+sgdisk --zap-all $ROOT_DISK_1
+sgdisk --zap-all $ROOT_DISK_2
+sgdisk --zap-all $TANK_DISK_1
+sgdisk --zap-all $TANK_DISK_2
+sgdisk --zap-all $TANK_DISK_3
+sgdisk --zap-all $TANK_DISK_4
