@@ -18,4 +18,6 @@ nix-channel --add https://nixos.org/channels/nixos-unstable nixos
 
 echo "Prepare nixos configuration from dotfiles"
 mkdir -p /mnt/etc/nixos
-ln -s /mnt/home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix
+cd /mnt/etc/nixos
+ln -s ../../home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix
+cd -
