@@ -17,8 +17,7 @@ zpool import -f rpool
 zpool import -f bpool
 zpool import -f tank
 
-zfs load-key rpool
-zfs load-key tank/home
+zfs load-key -a
 
 mount -t zfs rpool/ROOT/nixos            /mnt           
 mount -t zfs rpool/ROOT/nixos/etc        /mnt/etc       
