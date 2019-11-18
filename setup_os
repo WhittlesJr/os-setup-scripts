@@ -7,9 +7,10 @@ ssh-add .ssh/id_rsa
 echo "Download dotfiles to /mnt/home/alexj"
 nix-env -i git
 git clone --recurse-submodules git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
-cp secrets.nix /mnt/home/alexj/.config/nixos/data/.
+cp secrets.nix    /mnt/home/alexj/.config/nixos/data/.
+cp initrd-ssh-key /mnt/home/alexj/.config/nixos/data/.
 
-echo "Add ssh key to alexj's home"
+echo "Copy ssh keys"
 cp -R .ssh /mnt/home/alexj/
 
 echo "Select nixos-unstable channel"
