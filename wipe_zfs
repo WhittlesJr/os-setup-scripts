@@ -5,6 +5,9 @@ source disks
 umount -R /mnt
 
 zpool import
+zpool import -f tank
+zpool import -f rpool
+zpool import -f bpool
 zpool destroy tank
 zpool destroy rpool
 zpool destroy bpool
