@@ -13,6 +13,9 @@ cp initrd-ssh-key /mnt/home/alexj/.config/nixos/data/.
 echo "Copy ssh keys"
 cp -R .ssh /mnt/home/alexj/
 
+echo "Set permissions"
+chown -R alexj:users /mnt/home/alexj
+
 echo "Select nixos-unstable channel"
 nix-channel --add https://nixos.org/channels/nixos-unstable nixos
 
