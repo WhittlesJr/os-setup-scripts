@@ -104,6 +104,11 @@ mount -t zfs bpool/BOOT/nixos /mnt/boot
 ########################
 echo "Creating tank"
 
+mkdir /mnt/root
+
+cp tank-key /root/tank-key
+cp tank-key /mnt/root/tank-key
+
 zpool create -f       \
   -o ashift=12        \
   -o altroot=/mnt     \
@@ -114,13 +119,13 @@ zpool create -f       \
   tank mirror $TANK_DISK_1 $TANK_DISK_2 \
        mirror $TANK_DISK_3 $TANK_DISK_4
 
-zfs create -o com.sun:auto-snapshot=false -o mountpoint=legacy tank/media
-zfs create -o com.sun:auto-snapshot=true                       \
-	   -o atime=off                                        \
-           -o relatime=on                                      \
-           -o encryption=aes-256-gcm                           \
-           -o keyformat=passphrase                             \
-           -o keylocation=prompt          -o mountpoint=legacy tank/home
+zfs create -o com.sun:auto-snapshot=false       -o mountpoint=legacy tank/media
+zfs create -o com.sun:auto-snapshot=true                             \
+	   -o atime=off                                              \
+           -o relatime=on                                            \
+	   -o encryption=aes-256-gcm                                 \
+           -o keyformat=hex                                          \
+           -o keylocation=file:///root/tank-key -o mountpoint=legacy tank/home
 
 mkdir /mnt/media
 mkdir /mnt/home
