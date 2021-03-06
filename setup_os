@@ -1,26 +1,37 @@
 #!/usr/bin/env bash
 
 echo "Configure ssh"
-eval "$(ssh-agent -s)"
+eval $(ssh-agent -s)
 ssh-add .ssh/id_rsa
 
 echo "Download dotfiles to /mnt/home/alexj"
 nix-env -i git
-git clone --recurse-submodules git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
-cp secrets.nix    /mnt/home/alexj/.config/nixos/data/.
-cp initrd-ssh-key /mnt/home/alexj/.config/nixos/data/.
+git clone --recurse-submodules -j8 git@github.com:WhittlesJr/dotfiles.git /mnt/home/alexj
+
+cd /mnt/home/alexj
+git submodule update --init --recursive
+cd -
+
+cp secrets.nix          /mnt/home/alexj/.config/nixos/data/.
+cp initrd-ssh-key       /mnt/home/alexj/.config/nixos/data/.
+
+cp alexj.hashedPassword /mnt/home/alexj/Documents/Repositories/nixos-shared/users/.
+cp root.hashedPassword  /mnt/home/alexj/Documents/Repositories/nixos-shared/users/.
+
+git config --global user.email "alex.joseph.whitt@gmail.com"
+git config --global user.name "Alex Whitt"
+
 
 echo "Copy ssh keys"
 cp -R .ssh /mnt/home/alexj/
 
-echo "Set permissions"
-chown -R alexj:users /mnt/home/alexj
-
 echo "Select nixos-unstable channel"
 nix-channel --add https://nixos.org/channels/nixos-unstable nixos
+
+chown -R 1000:users /mnt/home/alexj
 
 echo "Prepare nixos configuration from dotfiles"
 mkdir -p /mnt/etc/nixos
 cd /mnt/etc/nixos
-ln -s ../../home/alexj/.config/nixos/machines/whittles-iskandar.nix /mnt/etc/nixos/configuration.nix
+ln -s ../../home/alexj/.config/nixos/machines/whittles-gilgamesh.nix /mnt/etc/nixos/configuration.nix
 cd -
