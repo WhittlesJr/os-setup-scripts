@@ -14,17 +14,17 @@ cp tank-key /root/.
 
 # Managed by NixOS
 zpool import -f rpool
-zpool import -f bpool
 zpool import -f tank
 
 zfs load-key -a
 
-mount -t zfs rpool/ROOT/nixos            /mnt           
-mount -t zfs rpool/ROOT/nixos/etc        /mnt/etc       
-mount -t zfs rpool/ROOT/nixos/var        /mnt/var       
-mount -t zfs rpool/ROOT/nixos/var/tmp    /mnt/var/tmp   
-mount -t zfs rpool/ROOT/nixos/var/cache  /mnt/var/cache 
-mount -t zfs bpool/BOOT/nixos            /mnt/boot      
-mount -t zfs tank/home                   /mnt/home      
-mount -t zfs tank/media                  /mnt/media     
+mount -t vfat /dev/disk/by-id/nvme-CT1000P5SSD8_20512C054CD8-part1 /nmt/boot
 
+mount -t zfs rpool/crypt/nixos            /mnt
+mount -t zfs rpool/crypt/nixos/home       /mnt/home
+mount -t zfs rpool/crypt/nixos/etc        /mnt/etc
+mount -t zfs rpool/crypt/nixos/nix        /mnt/nix
+mount -t zfs rpool/crypt/nixos/var        /mnt/var
+mount -t zfs rpool/crypt/nixos/var/tmp    /mnt/var/tmp
+mount -t zfs rpool/crypt/nixos/var/cache  /mnt/var/cache
+mount -t zfs tank/media                   /mnt/media

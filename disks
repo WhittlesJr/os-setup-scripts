@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-export ROOT_DISK_1=/dev/disk/by-id/ata-PNY_CS1311_240GB_SSD_PNY09162169090207A9E
-export ROOT_DISK_2=/dev/disk/by-id/ata-SATA_SSD_19082824003384
+export ROOT_DISK=/dev/disk/by-id/nvme-CT1000P5SSD8_20512C054CD8
 
-export TANK_DISK_1=/dev/disk/by-id/ata-TOSHIBA_HDWD110_36H5V8SNS 
+export TANK_DISK_1=/dev/disk/by-id/ata-TOSHIBA_HDWD110_36H5V8SNS
 export TANK_DISK_2=/dev/disk/by-id/ata-TOSHIBA_HDWD110_46OLZXNNS
-export TANK_DISK_3=/dev/disk/by-id/ata-TOSHIBA_HDWD110_4670AK5NS
-export TANK_DISK_4=/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y5FX3J8R
+export TANK_DISK_3=/dev/disk/by-id/ata-WDC_WD80EDAZ-11TA3A0_VGH29VSG
+export TANK_DISK_4=/dev/disk/by-id/ata-WDC_WD80EDAZ-11TA3A0_VGH4LNAG

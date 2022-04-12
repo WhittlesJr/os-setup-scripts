@@ -7,15 +7,12 @@ umount -R /mnt
 zpool import
 zpool import -f tank
 zpool import -f rpool
-zpool import -f bpool
 zpool destroy tank
 zpool destroy rpool
-zpool destroy bpool
 
 rm -rf /mnt
 
-sgdisk --zap-all $ROOT_DISK_1
-sgdisk --zap-all $ROOT_DISK_2
+sgdisk --zap-all $ROOT_DISK
 sgdisk --zap-all $TANK_DISK_1
 sgdisk --zap-all $TANK_DISK_2
 sgdisk --zap-all $TANK_DISK_3
