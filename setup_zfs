@@ -36,6 +36,13 @@ zfs create -o com.sun:auto-snapshot=false                                      \
            -o encryption=aes-256-gcm                                           \
            -o keyformat=passphrase                                             \
            -o keylocation=prompt                          -o mountpoint=none   rpool/crypt
+zfs create -o com.sun:auto-snapshot=false -V 18G                               \
+           -b $(getconf PAGESIZE)                                              \
+           -o compression=zle                                                  \
+           -o primarycache=metadata                                            \
+           -o secondarycache=none                                              \
+           -o sync=always                                                      \
+           -o logbias=throughput                                               rpool/swap
 zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=legacy rpool/crypt/nixos
 zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=legacy rpool/crypt/nixos/home
 zfs create -o com.sun:auto-snapshot=true                  -o mountpoint=legacy rpool/crypt/nixos/etc
@@ -45,6 +52,8 @@ zfs create -o com.sun:auto-snapshot=false -o setuid=off   -o mountpoint=legacy r
 zfs create -o com.sun:auto-snapshot=false                 -o mountpoint=legacy rpool/crypt/nixos/var/cache
 
 zpool set bootfs=rpool/crypt/nixos rpool
+
+mkswap -f /dev/zvol/rpool/swap 
 
 mkdir /mnt
 mount -t zfs rpool/crypt/nixos            /mnt
